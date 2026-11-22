@@ -1,0 +1,8 @@
+# Scripts SQL (se corren a mano en Supabase, no van al sitio)
+sql/
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.claude/

@@ -1,0 +1,30 @@
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { margin: 0; line-height: 1.25; font-weight: 800; }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+svg.lucide { width: 20px; height: 20px; stroke-width: 2; flex-shrink: 0; }
+
+:focus-visible {
+  outline: 3px solid var(--sky-300);
+  outline-offset: 2px;
+}
+
+[hidden] { display: none !important; }

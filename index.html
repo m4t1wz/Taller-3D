@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taller 3D</title>
+  <meta name="description" content="Taller 3D — gestión y calculadora de costos de impresiones 3D">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views/dashboard.css">
+  <link rel="stylesheet" href="css/views/calculadora.css">
+  <link rel="stylesheet" href="css/views/productos.css">
+  <link rel="stylesheet" href="css/views/filamentos.css">
+
+  <!-- Íconos: Lucide (https://lucide.dev) -->
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Menú principal">
+      <div class="sidebar__brand">
+        <span class="brand-logo"><i data-lucide="box"></i></span>
+        <span class="brand-name">Taller <strong>3D</strong></span>
+      </div>
+
+      <nav class="sidebar__nav">
+        <a href="#/dashboard" class="nav-link" data-route="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#/calculadora" class="nav-link" data-route="calculadora">
+          <i data-lucide="calculator"></i>
+          <span>Calculadora 3D</span>
+        </a>
+        <a href="#/productos" class="nav-link" data-route="productos">
+          <i data-lucide="package"></i>
+          <span>Productos</span>
+        </a>
+        <a href="#/filamentos" class="nav-link" data-route="filamentos">
+          <i data-lucide="disc-3"></i>
+          <span>Filamentos</span>
+        </a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <i data-lucide="coins"></i>
+        <span>Pesos argentinos (ARS)</span>
+      </div>
+    </aside>
+
+    <div class="overlay" id="overlay" hidden></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn hamburger" id="menuToggle" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">
+          <i data-lucide="menu"></i>
+        </button>
+        <h1 class="topbar__title" id="pageTitle">Taller 3D</h1>
+      </header>
+
+      <main class="view" id="view" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+</body>
+</html>

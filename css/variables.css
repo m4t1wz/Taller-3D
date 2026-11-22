@@ -1,0 +1,55 @@
+/* ===== Tokens de diseño: paleta celeste pastel ===== */
+:root {
+  --sky-25:  #f7fbff;
+  --sky-50:  #eef7fd;
+  --sky-100: #dcf0fb;
+  --sky-200: #bfe3f7;
+  --sky-300: #9dd3f1;
+  --sky-400: #74bfe8;
+  --sky-500: #4fa8da;
+  --sky-600: #3a8cc0;
+  --sky-700: #2d6f9b;
+
+  --ink-900: #1d3449;
+  --ink-700: #3d566c;
+  --ink-500: #6a8297;
+  --ink-300: #a9bccc;
+
+  --mint-100: #dff6ee;
+  --mint-600: #2f9e7a;
+  --peach-100: #fde9e2;
+  --peach-600: #d9785a;
+
+  /* Niveles de filamento */
+  --level-high: #4cc38a;
+  --level-high-soft: #dcf5e8;
+  --level-high-ink: #1d7a50;
+  --level-mid: #f5c542;
+  --level-mid-soft: #fdf3d3;
+  --level-mid-ink: #8a6500;
+  --level-low: #ef6b6b;
+  --level-low-soft: #fde2e2;
+  --level-low-ink: #b23a3a;
+
+  --bg: var(--sky-50);
+  --surface: #ffffff;
+  --surface-soft: var(--sky-25);
+  --border: #d8e9f4;
+  --text: var(--ink-900);
+  --text-muted: var(--ink-500);
+  --primary: var(--sky-500);
+  --primary-strong: var(--sky-600);
+  --primary-soft: var(--sky-100);
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+  --shadow-sm: 0 1px 2px rgba(45, 111, 155, .06);
+  --shadow: 0 6px 24px -8px rgba(45, 111, 155, .18);
+  --shadow-lg: 0 18px 40px -12px rgba(45, 111, 155, .28);
+
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+  --font: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.4, 0, .2, 1);
+}
