@@ -14,7 +14,9 @@ export function getSupabase() {
   if (!clientPromise) {
     clientPromise = import(CDN)
       .then(({ createClient }) =>
-        createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } }))
+        createClient(SUPABASE_URL, SUPABASE_KEY, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+        }))
       .catch((err) => {
         clientPromise = null;
         throw new Error('No se pudo conectar con Supabase. Revisá tu conexión a internet.', { cause: err });
@@ -51,7 +53,7 @@ export function mensajeError(error, accion = 'completar la operación') {
     return 'Falta crear la función en Supabase. Corré sql/02_filamentos.sql (ver SUPABASE_SETUP.md).';
   }
   if (code === '42501' || /row-level security|permission denied/i.test(msg)) {
-    return 'Sin permisos sobre la tabla. Volvé a correr el script SQL completo.';
+    return 'Sin permisos. Cerrá sesión y volvé a entrar; si sigue, revisá el email en sql/03_login.sql.';
   }
   if (code === 'P0001') {
     return msg; // mensaje propio lanzado desde una función SQL
