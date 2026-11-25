@@ -119,8 +119,10 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 - [x] Prueba 1, impresión normal con la PC prendida → Creeper Head, 3,13 g ✅
 - [x] Prueba 2, **cancelada a mitad** → Cubo cancelado: 322 mm = **0,96 g** de 2,96 g ✅
 - [x] Prueba 3, **PC apagada / puente detenido** → mismo Cubo: descontado 1 s después de volver a iniciar el puente (755,07 → 754,11 g) ✅
-- [ ] Prueba 4, **sin filamento activo** → tiene que quedar "pendiente", asignarla y que se descuente
-- [ ] Auditoría final: ✅ sin faltantes
+- [ ] *(Descartada)* Prueba 4, sin filamento activo: se maneja a mano desde Impresiones si hace falta
+- [x] Auditoría final: ✅ 2 descontadas, 0 faltantes, 0 diferencias
+
+**✅ Proyecto cerrado (25/11/2026): el descuento automático funciona y está verificado.**
 
 **Límite a recordar:** la KE guarda las últimas 50 impresiones. Con más de 50 impresiones seguidas sin prender la PC, las más viejas se pierden.
 
