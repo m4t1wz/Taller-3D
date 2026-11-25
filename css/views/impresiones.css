@@ -34,6 +34,22 @@
 .imp-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .imp-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.imp-side__top { display: flex; align-items: center; gap: 8px; }
+.imp-delete { width: 32px; height: 32px; border-radius: 10px; }
+.imp-delete svg.lucide { width: 16px; height: 16px; }
+
+.check-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--sky-50);
+  cursor: pointer;
+}
+.check-line input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--primary); }
+.check-line small { display: block; color: var(--text-muted); font-size: 12.5px; }
+
 .imp-grams { font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .imp-fil { display: inline-flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--ink-700); }
 .imp-fil--none { color: var(--level-mid-ink); }

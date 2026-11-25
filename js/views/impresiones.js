@@ -1,4 +1,5 @@
-import { listarImpresiones, ignorarImpresion, PAGINA_IMPRESIONES } from '../services/impresiones.js';
+import { listarImpresiones, ignorarImpresion, quitarImpresion, PAGINA_IMPRESIONES } from '../services/impresiones.js';
+import { openModal } from '../components/modal.js';
 import { listarFilamentos } from '../services/filamentos.js';
 import { supabaseConfigurado } from '../services/supabase.js';
 import { abrirAsignarImpresion } from '../components/filamentoModals.js';
@@ -29,6 +30,36 @@ const duracion = (s) => {
   return h ? `${h} h ${m} min` : `${m} min`;
 };
 
+/** Confirmación para eliminar una impresión del historial (con opción de devolver gramos). */
+function abrirQuitarImpresion(imp, onListo) {
+  const gramos = Number(imp.gramos);
+  const puedeDevolver = imp.filamento && gramos > 0;
+
+  openModal({
+    title: 'Eliminar del historial',
+    icon: 'trash-2',
+    submitLabel: 'Eliminar',
+    content: `
+      <p>¿Eliminar <b>${escapeHTML(nombrePieza(imp.archivo))}</b> (${formatGramos(gramos)}) del historial?</p>
+      ${puedeDevolver ? `
+        <label class="check-line">
+          <input type="checkbox" name="devolver">
+          <span>Devolver ${formatGramos(gramos)} a <b>${escapeHTML(imp.filamento.nombre)}</b>
+            <small>Marcalo solo si esa impresión se descontó por error.</small></span>
+        </label>` : ''}
+      ${imp.origen === 'auto'
+        ? '<p class="field__hint">Es automática: se oculta, pero el puente la recuerda para no volver a descontarla.</p>'
+        : ''}`,
+
+    async onSubmit(fd) {
+      const devolver = fd.get('devolver') === 'on';
+      await quitarImpresion(imp, { devolver });
+      toast(devolver ? `Eliminada · se devolvieron ${formatGramos(gramos)}` : 'Impresión eliminada', 'trash-2');
+      onListo?.();
+    },
+  });
+}
+
 function filaHTML(imp) {
   const fil = imp.filamento;
   const pendiente = imp.estado === 'pendiente';
@@ -52,6 +83,11 @@ function filaHTML(imp) {
        </div>`
     : '';
 
+  const quitar = pendiente
+    ? ''
+    : `<button type="button" class="icon-btn icon-btn--danger imp-delete" data-quitar="${escapeHTML(imp.id)}"
+               aria-label="Eliminar del historial"><i data-lucide="trash-2"></i></button>`;
+
   return `
     <li class="imp-row ${pendiente ? 'is-pending' : ''}">
       <div class="imp-main">
@@ -62,7 +98,10 @@ function filaHTML(imp) {
         <div class="imp-tags">${origen}${extra.join('')}</div>
       </div>
       <div class="imp-side">
-        <strong class="imp-grams">${formatGramos(imp.gramos)}</strong>
+        <div class="imp-side__top">
+          <strong class="imp-grams">${formatGramos(imp.gramos)}</strong>
+          ${quitar}
+        </div>
         ${filamento}
       </div>
       ${acciones}
@@ -180,6 +219,13 @@ export default {
     lista.addEventListener('click', async (e) => {
       const btnMas = e.target.closest('[data-mas]');
       if (btnMas) { cargarMas(btnMas); return; }
+
+      const btnQuitar = e.target.closest('[data-quitar]');
+      if (btnQuitar) {
+        const imp = impresiones.find((i) => i.id === btnQuitar.dataset.quitar);
+        if (imp) abrirQuitarImpresion(imp, () => { if (vivo) cargar(); });
+        return;
+      }
 
       const btnAsignar = e.target.closest('[data-asignar]');
       if (btnAsignar) {
