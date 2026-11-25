@@ -117,8 +117,8 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 - [x] **Vos:** correr `sql/07_auditoria.sql`
 - [x] **Claude:** primera auditoría → ✅ Creeper Head 3,13 g de "PLA Hellbot Ecofila Lock", 0 faltantes, 0 diferencias
 - [x] Prueba 1, impresión normal con la PC prendida → Creeper Head, 3,13 g ✅
-- [ ] Prueba 2, **cancelada a mitad** → tiene que descontar solo lo gastado y figurar como "Cancelada"
-- [ ] Prueba 3, **PC apagada / puente detenido** → `detener-puente.vbs`, imprimir, `iniciar-puente.vbs` → tiene que ponerse al día solo
+- [x] Prueba 2, **cancelada a mitad** → Cubo cancelado: 322 mm = **0,96 g** de 2,96 g ✅
+- [x] Prueba 3, **PC apagada / puente detenido** → mismo Cubo: descontado 1 s después de volver a iniciar el puente (755,07 → 754,11 g) ✅
 - [ ] Prueba 4, **sin filamento activo** → tiene que quedar "pendiente", asignarla y que se descuente
 - [ ] Auditoría final: ✅ sin faltantes
 
