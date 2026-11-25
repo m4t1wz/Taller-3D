@@ -110,6 +110,18 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 - [x] **Claude:** borrados los logs de diagnóstico de las pruebas (700 KB)
 - [ ] *(Opcional, recomendado)* reservar la IP de la impresora en el router (DHCP reservado)
 
+## Fase 6: comprobar que no se pierde nada
+
+- [x] **Claude:** auditor `puente/auditar.mjs` (doble clic en `auditar.bat`): compara el historial de la KE con Supabase, impresión por impresión (solo lectura)
+- [x] **Claude:** script `sql/07_auditoria.sql` (función `puente_auditar`, solo lectura con el token)
+- [x] **Vos:** correr `sql/07_auditoria.sql`
+- [x] **Claude:** primera auditoría → ✅ Creeper Head 3,13 g de "PLA Hellbot Ecofila Lock", 0 faltantes, 0 diferencias
+- [x] Prueba 1, impresión normal con la PC prendida → Creeper Head, 3,13 g ✅
+- [ ] Prueba 2, **cancelada a mitad** → tiene que descontar solo lo gastado y figurar como "Cancelada"
+- [ ] Prueba 3, **PC apagada / puente detenido** → `detener-puente.vbs`, imprimir, `iniciar-puente.vbs` → tiene que ponerse al día solo
+- [ ] Prueba 4, **sin filamento activo** → tiene que quedar "pendiente", asignarla y que se descuente
+- [ ] Auditoría final: ✅ sin faltantes
+
 **Límite a recordar:** la KE guarda las últimas 50 impresiones. Con más de 50 impresiones seguidas sin prender la PC, las más viejas se pierden.
 
 ---
