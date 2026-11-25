@@ -7,10 +7,16 @@ const COLUMNAS = '*, filamento:filamentos(id, nombre, color)';
  * Historial visible. Las "ignoradas" (marcas del historial previo al puente o
  * pendientes descartadas) solo sirven para no descontar dos veces: no se muestran.
  */
-export function listarImpresiones({ limite = 200 } = {}) {
+export const PAGINA_IMPRESIONES = 100;
+
+export function listarImpresiones({ desde = 0, limite = PAGINA_IMPRESIONES } = {}) {
   return consultar(
     TABLA,
-    (t) => t.select(COLUMNAS).neq('estado', 'ignorada').order('fecha', { ascending: false }).limit(limite),
+    (t) => t.select(COLUMNAS)
+      .neq('estado', 'ignorada')
+      .order('fecha', { ascending: false })
+      .order('id', { ascending: false })
+      .range(desde, desde + limite - 1),
     'cargar el historial',
   );
 }

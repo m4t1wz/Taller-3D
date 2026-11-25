@@ -91,13 +91,21 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 - [x] **Claude:** latido del puente cada minuto (y al cambiar de estado o cada 10 % de avance)
 - [x] **Claude:** script `sql/06_estado_puente.sql` (`puente_latido` con token y `estado_puente` solo para el dueño)
 - [x] **Claude:** tarjeta **Estado del puente** en el Dashboard: Conectado / Imprimiendo X · % / Desconectado hace X / Impresora sin conexión (se actualiza cada 30 s)
-- [ ] **Vos:** correr `sql/06_estado_puente.sql`
-- [ ] **Claude:** reiniciar el puente con la versión nueva y verificar el latido
-- [ ] **Claude:** subir a GitHub
+- [x] **Vos:** correr `sql/06_estado_puente.sql`
+- [x] **Claude:** reiniciar el puente con la versión nueva y verificar el latido (sin errores; `estado_puente` cerrado sin login)
+- [x] **Claude:** subir a GitHub
 - [ ] **Vos:** probar en el sitio publicado, con la PC prendida y apagada
 - [ ] *(Descartado)* descontar del rollo activo al momento de imprimir: se cambia de rollo normalmente
 - [ ] *(Opcional)* mover el puente a un celular Android viejo (Termux) o a una Raspberry Pi
 - [ ] *(Opcional)* notificación cuando un filamento queda con poco stock
+
+## Fase 5: a largo plazo (que nada se sature)
+
+- [x] **Claude:** revisión de límites: base de datos, tráfico de Supabase, logs, memoria del puente y pausa de Supabase por inactividad → sin riesgo
+- [x] **Claude:** **la IP de la impresora puede cambiar** → el puente aprende su nombre (`Ender3V3KE-DC21`) y, tras 3 fallos seguidos, la busca en la red (5 s) y guarda la IP nueva
+- [x] **Claude:** **Impresiones** cargaba solo 200 → ahora de a 100 con "Cargar más"
+- [x] **Claude:** borrados los logs de diagnóstico de las pruebas (700 KB)
+- [ ] *(Opcional, recomendado)* reservar la IP de la impresora en el router (DHCP reservado)
 
 **Límite a recordar:** la KE guarda las últimas 50 impresiones. Con más de 50 impresiones seguidas sin prender la PC, las más viejas se pierden.
 

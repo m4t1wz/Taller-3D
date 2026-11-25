@@ -38,6 +38,8 @@
 .imp-fil { display: inline-flex; align-items: center; font-size: 13px; font-weight: 700; color: var(--ink-700); }
 .imp-fil--none { color: var(--level-mid-ink); }
 
+.imp-more { display: flex; justify-content: center; margin-top: 16px; }
+
 .imp-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
 
 .tag {

@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, statSync, renameSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import net from 'node:net';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const UNA_VEZ = process.argv.includes('--una-vez');
@@ -26,6 +27,8 @@ const RECONEXION_MIN_MS = 10 * 1000;
 const RECONEXION_MAX_MS = 2 * 60 * 1000;
 const LOG_MAX_BYTES = 1024 * 1024;
 const LATIDO_MS = 60 * 1000;              // "estoy vivo" a Supabase cada minuto
+const FALLOS_PARA_BUSCAR = 3;             // intentos fallidos seguidos antes de buscar la IP
+const ESCANEO_CADA_MS = 10 * 60 * 1000;   // no escanear la red más de una vez cada 10 min
 
 const PEDIDO_HISTORIAL = JSON.stringify({
   method: 'get',
@@ -203,6 +206,82 @@ async function latido() {
   }
 }
 
+/* ---------- Búsqueda de la impresora si cambia de IP ---------- */
+
+let fallosSeguidos = 0;
+let ultimoEscaneo = 0;
+
+function guardarConfig() {
+  try {
+    writeFileSync(join(DIR, 'config.json'), JSON.stringify(config, null, 2) + '\n');
+  } catch (err) {
+    log('No se pudo guardar config.json:', err.message);
+  }
+}
+
+/** ¿Hay algo escuchando en ip:9999? (rápido, sin WebSocket) */
+function puertoAbierto(ip, ms = 600) {
+  return new Promise((resolve) => {
+    const s = net.connect({ host: ip, port: 9999 });
+    const fin = (ok) => { s.destroy(); resolve(ok); };
+    s.setTimeout(ms, () => fin(false));
+    s.once('connect', () => fin(true));
+    s.once('error', () => fin(false));
+  });
+}
+
+/** ¿Es NUESTRA impresora? Compara el hostname que publica por el WebSocket. */
+function esMiImpresora(ip) {
+  return new Promise((resolve) => {
+    let listo = false;
+    const w = new WebSocket(`ws://${ip}:9999`);
+    const fin = (ok) => {
+      if (listo) return;
+      listo = true;
+      clearTimeout(t);
+      try { w.close(); } catch { /* nada */ }
+      resolve(ok);
+    };
+    const t = setTimeout(() => fin(false), 6000);
+    w.addEventListener('message', (ev) => {
+      let d;
+      try { d = JSON.parse(String(ev.data)); } catch { return; }
+      if (d?.hostname) fin(config.hostname ? d.hostname === config.hostname : true);
+    });
+    w.addEventListener('close', () => fin(false));
+    w.addEventListener('error', () => { /* close se encarga */ });
+  });
+}
+
+async function buscarImpresora() {
+  ultimoEscaneo = Date.now();
+  const base = String(config.impresora).split('.').slice(0, 3).join('.');
+  if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(base)) return;
+
+  log(`No encuentro la impresora en ${config.impresora}. Buscándola en la red ${base}.x…`);
+  const ips = Array.from({ length: 254 }, (_, i) => `${base}.${i + 1}`);
+  const candidatos = [];
+  for (let i = 0; i < ips.length; i += 32) {
+    const lote = ips.slice(i, i + 32);
+    const abiertos = await Promise.all(lote.map((ip) => puertoAbierto(ip).then((ok) => (ok ? ip : null))));
+    candidatos.push(...abiertos.filter(Boolean));
+  }
+
+  for (const ip of candidatos) {
+    if (await esMiImpresora(ip)) {
+      if (ip !== config.impresora) {
+        log(`Impresora encontrada en ${ip} (antes ${config.impresora}). IP actualizada.`);
+        config.impresora = ip;
+        guardarConfig();
+      } else {
+        log('La impresora sigue en la misma IP (¿estaba apagada?).');
+      }
+      return;
+    }
+  }
+  log('No encontré la impresora en la red (¿está apagada?). Sigo intentando.');
+}
+
 /* ---------- Impresora ---------- */
 
 function pedirHistorial() {
@@ -213,6 +292,13 @@ function procesar(data) {
   if (data.ModeCode === 'heart_beat') {
     ws.send('ok');
     return;
+  }
+
+  // Aprender el nombre de la impresora (sirve para encontrarla si cambia de IP)
+  if (data.hostname && config.hostname !== data.hostname && !config.hostname) {
+    config.hostname = String(data.hostname);
+    guardarConfig();
+    log(`Impresora identificada como "${config.hostname}".`);
   }
 
   if ('printStartTime' in data) inicioActual = data.printStartTime || null;
@@ -248,8 +334,11 @@ function procesar(data) {
 function conectar() {
   log(`Conectando a la impresora ${config.impresora}…`);
   ws = new WebSocket(`ws://${config.impresora}:9999`);
+  let abierto = false;
 
   ws.addEventListener('open', () => {
+    abierto = true;
+    fallosSeguidos = 0;
     log('Conectado a la impresora.');
     espera = RECONEXION_MIN_MS;
     ultimoMensaje = Date.now();
@@ -270,8 +359,20 @@ function conectar() {
       terminar(1);
       return;
     }
-    log(`Desconectado. Reintento en ${Math.round(espera / 1000)} s.`);
     latido(); // avisa "impresora sin conexión"
+
+    if (!abierto) fallosSeguidos++;
+    // Varios intentos fallidos seguidos: ¿cambió la IP? Buscarla en la red (como mucho cada 10 min)
+    if (fallosSeguidos >= FALLOS_PARA_BUSCAR && Date.now() - ultimoEscaneo > ESCANEO_CADA_MS) {
+      buscarImpresora().finally(() => {
+        fallosSeguidos = 0;
+        espera = RECONEXION_MIN_MS;
+        conectar();
+      });
+      return;
+    }
+
+    log(`Desconectado. Reintento en ${Math.round(espera / 1000)} s.`);
     setTimeout(conectar, espera);
     espera = Math.min(espera * 2, RECONEXION_MAX_MS);
   });

@@ -1,4 +1,4 @@
-import { listarImpresiones, ignorarImpresion } from '../services/impresiones.js';
+import { listarImpresiones, ignorarImpresion, PAGINA_IMPRESIONES } from '../services/impresiones.js';
 import { listarFilamentos } from '../services/filamentos.js';
 import { supabaseConfigurado } from '../services/supabase.js';
 import { abrirAsignarImpresion } from '../components/filamentoModals.js';
@@ -77,6 +77,7 @@ export default {
     let impresiones = [];
     let filamentos = [];
     let filtro = 'todas';
+    let hayMas = false;
 
     container.innerHTML = `
       <div class="page-header page-header--row">
@@ -123,8 +124,24 @@ export default {
       } else {
         const total = filtradas.filter((i) => i.estado === 'descontada').reduce((s, i) => s + Number(i.gramos), 0);
         pintar(`
-          <p class="imp-summary">${filtradas.length} ${filtradas.length === 1 ? 'impresión' : 'impresiones'} · ${formatGramos(total)} descontados</p>
-          <ul class="imp-list">${filtradas.map(filaHTML).join('')}</ul>`);
+          <p class="imp-summary">${filtradas.length} ${filtradas.length === 1 ? 'impresión' : 'impresiones'} · ${formatGramos(total)} descontados${hayMas ? ' (cargadas hasta ahora)' : ''}</p>
+          <ul class="imp-list">${filtradas.map(filaHTML).join('')}</ul>
+          ${hayMas ? '<div class="imp-more"><button type="button" class="btn btn--soft" data-mas><i data-lucide="chevrons-down"></i> Cargar más</button></div>' : ''}`);
+      }
+    }
+
+    async function cargarMas(btn) {
+      btn.disabled = true;
+      try {
+        const nuevas = (await listarImpresiones({ desde: impresiones.length })) ?? [];
+        if (!vivo) return;
+        const ids = new Set(impresiones.map((i) => i.id));
+        impresiones = impresiones.concat(nuevas.filter((i) => !ids.has(i.id)));
+        hayMas = nuevas.length === PAGINA_IMPRESIONES;
+        mostrar();
+      } catch (err) {
+        btn.disabled = false;
+        toast(err.message, 'alert-circle', 4000);
       }
     }
 
@@ -142,6 +159,7 @@ export default {
         if (!vivo) return;
         impresiones = imps ?? [];
         filamentos = fils ?? [];
+        hayMas = impresiones.length === PAGINA_IMPRESIONES;
         mostrar();
       } catch (err) {
         if (!vivo) return;
@@ -160,6 +178,9 @@ export default {
     container.querySelector('#recargar').addEventListener('click', cargar);
 
     lista.addEventListener('click', async (e) => {
+      const btnMas = e.target.closest('[data-mas]');
+      if (btnMas) { cargarMas(btnMas); return; }
+
       const btnAsignar = e.target.closest('[data-asignar]');
       if (btnAsignar) {
         const imp = impresiones.find((i) => i.id === btnAsignar.dataset.asignar);
