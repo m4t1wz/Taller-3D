@@ -9,8 +9,9 @@ import dashboard from './views/dashboard.js';
 import calculadora from './views/calculadora.js';
 import productos from './views/productos.js';
 import filamentos from './views/filamentos.js';
+import impresiones from './views/impresiones.js';
 
-const ROUTES = { dashboard, calculadora, productos, filamentos };
+const ROUTES = { dashboard, calculadora, productos, filamentos, impresiones };
 
 const appEl = document.getElementById('app');
 const authEl = document.getElementById('auth');

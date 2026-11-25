@@ -1,4 +1,4 @@
-import { listarFilamentos, eliminarFilamento } from '../services/filamentos.js';
+import { listarFilamentos, eliminarFilamento, activarFilamento } from '../services/filamentos.js';
 import { supabaseConfigurado } from '../services/supabase.js';
 import { abrirFormFilamento, abrirRegistrarImpresion, esHexValido } from '../components/filamentoModals.js';
 import { toast } from '../components/toast.js';
@@ -26,12 +26,15 @@ function tarjetaHTML(f) {
   const pctTexto = Math.round(pct);
 
   return `
-    <article class="fil-card">
+    <article class="fil-card ${f.activo ? 'is-active' : ''}">
       <header class="fil-card__head">
         <span class="spool" style="--fil-color:${color}" aria-hidden="true"></span>
         <div class="fil-card__title">
           <h3>${nombre}</h3>
-          <span class="nivel nivel--${clave}">${texto}</span>
+          <div class="fil-card__badges">
+            <span class="nivel nivel--${clave}">${texto}</span>
+            ${f.activo ? '<span class="badge-activo"><i data-lucide="zap"></i>Activo</span>' : ''}
+          </div>
         </div>
         <div class="card-actions">
           <button type="button" class="icon-btn" data-editar="${id}" aria-label="Editar ${nombre}"><i data-lucide="pencil"></i></button>
@@ -49,10 +52,15 @@ function tarjetaHTML(f) {
         <span>de ${formatGramos(f.gramos_totales)} · ${pctTexto} %</span>
       </div>
 
-      <button type="button" class="btn btn--primary btn--block" data-imprimir="${id}"
-              ${Number(f.gramos_actuales) <= 0 ? 'disabled' : ''}>
-        <i data-lucide="printer"></i> Agregar impresión
-      </button>
+      <div class="fil-card__actions">
+        <button type="button" class="btn btn--primary" data-imprimir="${id}"
+                ${Number(f.gramos_actuales) <= 0 ? 'disabled' : ''}>
+          <i data-lucide="printer"></i> Agregar impresión
+        </button>
+        ${f.activo
+          ? '<span class="fil-card__active-note">Las impresiones automáticas se descuentan de acá</span>'
+          : `<button type="button" class="btn btn--soft" data-activar="${id}"><i data-lucide="zap"></i> Usar como activo</button>`}
+      </div>
     </article>`;
 }
 
@@ -97,7 +105,9 @@ export default {
           '<button type="button" class="btn btn--primary" data-nuevo><i data-lucide="plus"></i> Nuevo filamento</button>'));
         return;
       }
-      pintar(`<div class="fil-grid">${filamentos.map(tarjetaHTML).join('')}</div>`);
+      // El activo siempre primero
+      const ordenados = [...filamentos].sort((a, b) => Number(b.activo) - Number(a.activo));
+      pintar(`<div class="fil-grid">${ordenados.map(tarjetaHTML).join('')}</div>`);
     }
 
     function reemplazar(actualizado) {
@@ -136,14 +146,29 @@ export default {
       if (e.target.closest('[data-reintentar]')) { cargar(); return; }
       if (e.target.closest('[data-nuevo]')) { nuevo(); return; }
 
-      const btn = e.target.closest('[data-imprimir], [data-editar], [data-eliminar]');
+      const btn = e.target.closest('[data-imprimir], [data-editar], [data-eliminar], [data-activar]');
       if (!btn) return;
-      const id = btn.dataset.imprimir ?? btn.dataset.editar ?? btn.dataset.eliminar;
+      const id = btn.dataset.imprimir ?? btn.dataset.editar ?? btn.dataset.eliminar ?? btn.dataset.activar;
       const filamento = filamentos.find((f) => f.id === id);
       if (!filamento) return;
 
       if (btn.dataset.imprimir) { abrirRegistrarImpresion(filamento, reemplazar); return; }
       if (btn.dataset.editar) { abrirFormFilamento(filamento, reemplazar); return; }
+
+      if (btn.dataset.activar) {
+        btn.disabled = true;
+        try {
+          await activarFilamento(filamento.id);
+          if (!activo) return;
+          filamentos = filamentos.map((f) => ({ ...f, activo: f.id === filamento.id }));
+          mostrar();
+          toast(`"${filamento.nombre}" es el filamento activo`, 'zap');
+        } catch (err) {
+          btn.disabled = false;
+          toast(err.message, 'alert-circle', 4000);
+        }
+        return;
+      }
 
       if (!confirm(`¿Eliminar "${filamento.nombre}"? No se puede deshacer.`)) return;
       btn.disabled = true;

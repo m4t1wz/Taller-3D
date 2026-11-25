@@ -33,3 +33,4 @@ export const NIVEL_FILAMENTO = {
 };
 
 export const ROLLO_DEFAULT_G = 1000;
+export const DENSIDAD_DEFAULT = 1.24; // PLA, g/cm³

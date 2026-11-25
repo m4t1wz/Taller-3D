@@ -22,7 +22,16 @@ export function eliminarFilamento(id) {
   return consultar(TABLA, (t) => t.delete().eq('id', id), 'eliminar el filamento');
 }
 
-/** Descuenta gramos de forma atómica en la base. Devuelve el filamento actualizado. */
-export function registrarImpresion(id, gramos) {
-  return llamarFuncion('registrar_impresion', { p_filamento_id: id, p_gramos: gramos }, 'registrar la impresión');
+/** Descuenta gramos de forma atómica y lo anota en el historial. Devuelve el filamento actualizado. */
+export function registrarImpresion(id, gramos, archivo = null) {
+  return llamarFuncion(
+    'registrar_impresion',
+    { p_filamento_id: id, p_gramos: gramos, p_archivo: archivo },
+    'registrar la impresión',
+  );
+}
+
+/** Marca un filamento como activo (null = ninguno). */
+export function activarFilamento(id) {
+  return llamarFuncion('activar_filamento', { p_filamento_id: id }, 'cambiar el filamento activo');
 }

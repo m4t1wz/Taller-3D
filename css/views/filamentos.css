@@ -18,6 +18,50 @@
 }
 .fil-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 
+/* Filamento activo */
+.fil-card.is-active {
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 0 4px rgba(157, 211, 241, .35), var(--shadow);
+}
+.fil-card__badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge-activo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.badge-activo svg.lucide { width: 13px; height: 13px; }
+
+.fil-card__actions { display: flex; flex-direction: column; gap: 8px; }
+.fil-card__active-note {
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary-strong);
+}
+
+/* Opciones de filamento (modal "Asignar impresión") */
+.fil-options { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+.fil-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.fil-option:has(input:checked) { border-color: var(--primary); background: var(--sky-50); }
+.fil-option input { accent-color: var(--primary); }
+.fil-option .legend-swatch { margin: 0; }
+.fil-option__name { flex: 1; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fil-option__grams { font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
 .fil-card__head { display: flex; align-items: center; gap: 12px; }
 .fil-card__title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .fil-card__title h3 { font-size: 16.5px; word-break: break-word; }

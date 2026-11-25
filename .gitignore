@@ -6,3 +6,7 @@ sql/
 Thumbs.db
 .vscode/
 .claude/
+
+# Puente: configuración con token y logs locales
+puente/config.json
+puente/logs/

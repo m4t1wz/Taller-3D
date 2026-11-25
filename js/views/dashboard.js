@@ -1,5 +1,7 @@
 import { listarProductos } from '../services/productos.js';
-import { listarFilamentos } from '../services/filamentos.js';
+import { listarFilamentos, activarFilamento } from '../services/filamentos.js';
+import { impresionesParaResumen } from '../services/impresiones.js';
+import { toast } from '../components/toast.js';
 import { supabaseConfigurado } from '../services/supabase.js';
 import { abrirFormFilamento } from '../components/filamentoModals.js';
 import { PERFIL_DEFAULT, NIVEL_FILAMENTO } from '../config.js';
@@ -63,9 +65,39 @@ function stockHTML(filamentos) {
     </ul>`;
 }
 
-function alertasHTML(filamentos) {
+function activoHTML(filamentos) {
   if (!filamentos.length) {
-    return `<ul class="alerts"><li class="alert alert--info"><i data-lucide="info"></i>
+    return '<p class="activo-empty">Cargá un filamento para poder elegirlo como activo.</p>';
+  }
+  const activo = filamentos.find((f) => f.activo);
+  return `
+    <div class="activo-row">
+      <span class="spool spool--sm" style="--fil-color:${colorSeguro(activo?.color)}" aria-hidden="true"
+            ${activo ? '' : 'data-sin-activo'}></span>
+      <div class="activo-info">
+        <span class="activo-label">${activo ? 'Las impresiones automáticas se descuentan de:' : 'No hay filamento activo: las impresiones quedan pendientes.'}</span>
+        <label class="input-wrap activo-select">
+          <select id="selectActivo" aria-label="Filamento activo">
+            <option value="" ${activo ? '' : 'selected'}>— Ninguno —</option>
+            ${filamentos.map((f) => `
+              <option value="${escapeHTML(f.id)}" ${f.activo ? 'selected' : ''}>
+                ${escapeHTML(f.nombre)} (${formatGramos(f.gramos_actuales)})
+              </option>`).join('')}
+          </select>
+        </label>
+      </div>
+    </div>`;
+}
+
+function alertasHTML(filamentos, pendientes = 0) {
+  const avisoPendientes = pendientes
+    ? `<li class="alert alert--mitad"><i data-lucide="clock"></i><span>
+         <b>${pendientes} ${pendientes === 1 ? 'impresión' : 'impresiones'}</b> sin filamento asignado.
+         <a href="#/impresiones" class="dash-link">Asignar</a></span></li>`
+    : '';
+
+  if (!filamentos.length) {
+    return `<ul class="alerts">${avisoPendientes}<li class="alert alert--info"><i data-lucide="info"></i>
       <span>Cargá tus filamentos para recibir alertas de stock.</span></li></ul>`;
   }
 
@@ -85,12 +117,12 @@ function alertasHTML(filamentos) {
   }
 
   if (!alertas.length) {
-    return `<ul class="alerts"><li class="alert alert--ok"><i data-lucide="circle-check"></i>
+    return `<ul class="alerts">${avisoPendientes}<li class="alert alert--ok"><i data-lucide="circle-check"></i>
       <span>Todo el stock está bien. No hay bobinas por agotarse.</span></li></ul>`;
   }
 
   alertas.sort((a, b) => a.orden - b.orden);
-  return `<ul class="alerts">${alertas.map((a) => `
+  return `<ul class="alerts">${avisoPendientes}${alertas.map((a) => `
     <li class="alert alert--${a.tipo}"><i data-lucide="${a.icono}"></i><span>${a.texto}</span></li>`).join('')}</ul>`;
 }
 
@@ -182,6 +214,14 @@ export default {
 
       <div class="stats" id="stats"></div>
 
+      <section class="card dash-activo" id="pActivo">
+        <div class="card__head">
+          <h3 class="card__title"><span class="card__icon"><i data-lucide="zap"></i></span>Filamento activo</h3>
+          <a href="#/impresiones" class="dash-link">Historial <i data-lucide="arrow-right"></i></a>
+        </div>
+        <div data-body><div class="loading"><i data-lucide="loader-circle"></i> Cargando…</div></div>
+      </section>
+
       <div class="dash-grid">
         ${panel('pStock', 'disc-3', 'Inventario de filamentos', '<a href="#/filamentos" class="dash-link">Gestionar <i data-lucide="arrow-right"></i></a>')}
         ${panel('pAlertas', 'bell', 'Alertas')}
@@ -197,17 +237,20 @@ export default {
       renderIcons(el);
     }
 
-    function pintarStats(productos, filamentos) {
+    function pintarStats(productos, filamentos, impresionesMes) {
       const perfil = cargarLocal('perfil', PERFIL_DEFAULT);
       const gramos = filamentos ? filamentos.reduce((s, f) => s + Number(f.gramos_actuales), 0) : null;
       const valor = gramos != null ? (gramos / 1000) * perfil.precioFilamento : null;
       const pocos = filamentos ? filamentos.filter((f) => nivelFilamento(f).clave === 'poco').length : null;
+      const consumidoMes = impresionesMes ? impresionesMes.reduce((s, i) => s + Number(i.gramos), 0) : null;
       const guion = '—';
 
       pintar(statsEl, [
         statHTML('package', productos ? productos.length : guion, 'Productos registrados'),
         statHTML('weight', gramos != null ? formatPeso(gramos) : guion, 'Filamento disponible',
           filamentos ? `${filamentos.length} ${filamentos.length === 1 ? 'bobina' : 'bobinas'}` : ''),
+        statHTML('printer', impresionesMes ? impresionesMes.length : guion, 'Impresiones del mes',
+          consumidoMes != null ? `${formatPeso(consumidoMes)} consumidos` : ''),
         statHTML('wallet', valor != null ? formatARS(valor) : guion, 'Valor del filamento',
           `a ${formatARS(perfil.precioFilamento)}/kg (perfil)`),
         statHTML('triangle-alert', pocos ?? guion, 'Bobinas por agotarse',
@@ -217,26 +260,38 @@ export default {
 
     async function cargarTodo() {
       if (!supabaseConfigurado) {
-        pintarStats(null, null);
+        pintarStats(null, null, null);
         const msg = vacioHTML('Supabase no está configurado. Seguí SUPABASE_SETUP.md.');
-        ['pStock', 'pAlertas', 'pDist', 'pRecientes'].forEach((id) => pintar(body(id), msg));
+        ['pActivo', 'pStock', 'pAlertas', 'pDist', 'pRecientes'].forEach((id) => pintar(body(id), msg));
         return;
       }
 
-      const [rp, rf] = await Promise.allSettled([listarProductos(), listarFilamentos()]);
+      const [rp, rf, ri] = await Promise.allSettled([
+        listarProductos(), listarFilamentos(), impresionesParaResumen(),
+      ]);
       if (!activo) return;
 
       const productos = rp.status === 'fulfilled' ? rp.value ?? [] : null;
       const filamentos = rf.status === 'fulfilled' ? rf.value ?? [] : null;
+      const imps = ri.status === 'fulfilled' ? ri.value ?? [] : null;
 
-      pintarStats(productos, filamentos);
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+      const impresionesMes = imps
+        ? imps.filter((i) => i.estado === 'descontada' && new Date(i.fecha) >= inicioMes)
+        : null;
+      const pendientes = imps ? imps.filter((i) => i.estado === 'pendiente').length : 0;
+
+      pintarStats(productos, filamentos, impresionesMes);
 
       if (filamentos) {
+        pintar(body('pActivo'), activoHTML(filamentos));
         pintar(body('pStock'), stockHTML(filamentos));
-        pintar(body('pAlertas'), alertasHTML(filamentos));
+        pintar(body('pAlertas'), alertasHTML(filamentos, pendientes));
         pintar(body('pDist'), distribucionHTML(filamentos));
       } else {
-        ['pStock', 'pAlertas', 'pDist'].forEach((id) => pintar(body(id), errorHTML(rf.reason)));
+        ['pActivo', 'pStock', 'pAlertas', 'pDist'].forEach((id) => pintar(body(id), errorHTML(rf.reason)));
       }
       pintar(body('pRecientes'), productos ? recientesHTML(productos) : errorHTML(rp.reason));
     }
@@ -247,7 +302,22 @@ export default {
       }
     });
 
-    pintarStats(null, null);
+    container.addEventListener('change', async (e) => {
+      if (e.target.id !== 'selectActivo') return;
+      const select = e.target;
+      select.disabled = true;
+      try {
+        await activarFilamento(select.value || null);
+        if (!activo) return;
+        toast(select.value ? 'Filamento activo actualizado' : 'Sin filamento activo', 'zap');
+        cargarTodo();
+      } catch (err) {
+        select.disabled = false;
+        toast(err.message, 'alert-circle', 4000);
+      }
+    });
+
+    pintarStats(null, null, null);
     cargarTodo();
 
     return () => { activo = false; };
