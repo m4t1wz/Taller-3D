@@ -102,7 +102,10 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 ## Fase 5: a largo plazo (que nada se sature)
 
 - [x] **Claude:** revisión de límites: base de datos, tráfico de Supabase, logs, memoria del puente y pausa de Supabase por inactividad → sin riesgo
-- [x] **Claude:** **la IP de la impresora puede cambiar** → el puente aprende su nombre (`Ender3V3KE-DC21`) y, tras 3 fallos seguidos, la busca en la red (5 s) y guarda la IP nueva
+- [x] **Claude:** **la IP de la impresora puede cambiar** → la impresora se identifica por su **nombre** (`hostname`: `Ender3V3KE-DC21`); la IP es solo un atajo (`ultimaIp`)
+  - [x] al conectar se verifica el nombre antes de usar cualquier dato (si en esa IP hay otro equipo, se descarta)
+  - [x] si la IP no responde 2 veces seguidas, la busca por nombre en todas las redes de la PC (unos 5 s, como mucho cada 5 min)
+  - [x] probado: sin IP → la encontró por nombre; con una IP equivocada (.250) → la encontró en .12 y actualizó el atajo
 - [x] **Claude:** **Impresiones** cargaba solo 200 → ahora de a 100 con "Cargar más"
 - [x] **Claude:** borrados los logs de diagnóstico de las pruebas (700 KB)
 - [ ] *(Opcional, recomendado)* reservar la IP de la impresora en el router (DHCP reservado)

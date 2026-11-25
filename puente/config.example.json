@@ -1,5 +1,5 @@
 {
-  "impresora": "192.168.1.XX",
+  "hostname": "Ender3V3KE-XXXX",
   "supabaseUrl": "https://TU-PROYECTO.supabase.co",
   "supabaseKey": "sb_publishable_...",
   "token": "token secreto del puente (su hash va en puente_tokens)"
