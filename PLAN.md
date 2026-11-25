@@ -74,13 +74,15 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 
 ## Fase 3: Puente (programa en tu PC)
 
-- [ ] **Claude:** `puente/puente.mjs`: conexión, reconexión automática, detección de fin de impresión
-- [ ] **Claude:** sincronizar el historial al arrancar, para las impresiones hechas con la PC apagada
-- [ ] **Claude:** `puente/config.example.json` (IP + token), sin subir el real a GitHub
-- [ ] **Claude:** generar el token del puente
-- [ ] **Vos + Claude:** prueba real: imprimir algo y ver que se descuente solo
-- [ ] **Claude:** guía para que arranque solo con Windows (Programador de tareas)
-- [ ] **Vos:** dejarlo configurado
+- [x] **Claude:** `puente/puente.mjs`: conexión, reconexión automática, detección de fin de impresión
+- [x] **Claude:** sincronizar el historial al arrancar, para las impresiones hechas con la PC apagada
+- [x] **Claude:** `puente/config.example.json` (IP + token), sin subir el real a GitHub
+- [x] **Claude:** generar el token del puente
+- [x] **Claude:** primera sincronización: 50 impresiones previas marcadas como vistas, nada descontado; la segunda corrida dio "Historial al día" (sin duplicados)
+- [x] **Vos + Claude:** prueba real: Creeper_Head, 1.049,96 mm → **3,13 g descontados solos** (758,2 → 755,07 g; Creality Print estimaba 3,09 g)
+- [x] **Claude:** bug encontrado en la prueba: la KE agrega la impresión al historial apenas EMPIEZA (0 mm). Corregido en el puente y en Supabase (`sql/05_fix_impresion_en_curso.sql`)
+- [x] **Claude:** `iniciar-puente.vbs` / `detener-puente.vbs` (sin ventana, nunca dos puentes a la vez)
+- [ ] **Vos:** acceso directo en la carpeta Inicio de Windows para que arranque solo
 
 ## Fase 4 (opcional): siempre encendido
 
