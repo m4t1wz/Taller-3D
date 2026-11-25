@@ -82,12 +82,24 @@ Creality Print ──gcode──▶ Ender 3 V3 KE
 - [x] **Vos + Claude:** prueba real: Creeper_Head, 1.049,96 mm → **3,13 g descontados solos** (758,2 → 755,07 g; Creality Print estimaba 3,09 g)
 - [x] **Claude:** bug encontrado en la prueba: la KE agrega la impresión al historial apenas EMPIEZA (0 mm). Corregido en el puente y en Supabase (`sql/05_fix_impresion_en_curso.sql`)
 - [x] **Claude:** `iniciar-puente.vbs` / `detener-puente.vbs` (sin ventana, nunca dos puentes a la vez)
-- [ ] **Vos:** acceso directo en la carpeta Inicio de Windows para que arranque solo
+- [x] **Vos:** acceso directo en la carpeta Inicio de Windows para que arranque solo (verificado: corriendo y conectado)
 
-## Fase 4 (opcional): siempre encendido
+**✅ Fase 3 completa: el descuento automático funciona.**
 
-- [ ] Mover el puente a un celular Android viejo (Termux) o a una Raspberry Pi
-- [ ] Notificación cuando un filamento queda con poco stock
+## Fase 4: estado del puente y extras
+
+- [x] **Claude:** latido del puente cada minuto (y al cambiar de estado o cada 10 % de avance)
+- [x] **Claude:** script `sql/06_estado_puente.sql` (`puente_latido` con token y `estado_puente` solo para el dueño)
+- [x] **Claude:** tarjeta **Estado del puente** en el Dashboard: Conectado / Imprimiendo X · % / Desconectado hace X / Impresora sin conexión (se actualiza cada 30 s)
+- [ ] **Vos:** correr `sql/06_estado_puente.sql`
+- [ ] **Claude:** reiniciar el puente con la versión nueva y verificar el latido
+- [ ] **Claude:** subir a GitHub
+- [ ] **Vos:** probar en el sitio publicado, con la PC prendida y apagada
+- [ ] *(Descartado)* descontar del rollo activo al momento de imprimir: se cambia de rollo normalmente
+- [ ] *(Opcional)* mover el puente a un celular Android viejo (Termux) o a una Raspberry Pi
+- [ ] *(Opcional)* notificación cuando un filamento queda con poco stock
+
+**Límite a recordar:** la KE guarda las últimas 50 impresiones. Con más de 50 impresiones seguidas sin prender la PC, las más viejas se pierden.
 
 ---
 

@@ -2,6 +2,8 @@ import { listarProductos } from '../services/productos.js';
 import { listarFilamentos, activarFilamento } from '../services/filamentos.js';
 import { impresionesParaResumen } from '../services/impresiones.js';
 import { toast } from '../components/toast.js';
+import { obtenerEstadoPuente } from '../services/puente.js';
+import { estadoPuenteHTML } from '../components/estadoPuente.js';
 import { supabaseConfigurado } from '../services/supabase.js';
 import { abrirFormFilamento } from '../components/filamentoModals.js';
 import { PERFIL_DEFAULT, NIVEL_FILAMENTO } from '../config.js';
@@ -214,13 +216,21 @@ export default {
 
       <div class="stats" id="stats"></div>
 
-      <section class="card dash-activo" id="pActivo">
-        <div class="card__head">
-          <h3 class="card__title"><span class="card__icon"><i data-lucide="zap"></i></span>Filamento activo</h3>
-          <a href="#/impresiones" class="dash-link">Historial <i data-lucide="arrow-right"></i></a>
-        </div>
-        <div data-body><div class="loading"><i data-lucide="loader-circle"></i> Cargando…</div></div>
-      </section>
+      <div class="dash-top">
+        <section class="card dash-activo" id="pActivo">
+          <div class="card__head">
+            <h3 class="card__title"><span class="card__icon"><i data-lucide="zap"></i></span>Filamento activo</h3>
+            <a href="#/impresiones" class="dash-link">Historial <i data-lucide="arrow-right"></i></a>
+          </div>
+          <div data-body><div class="loading"><i data-lucide="loader-circle"></i> Cargando…</div></div>
+        </section>
+        <section class="card dash-activo" id="pPuente">
+          <div class="card__head">
+            <h3 class="card__title"><span class="card__icon"><i data-lucide="radio-tower"></i></span>Estado del puente</h3>
+          </div>
+          <div data-body><div class="loading"><i data-lucide="loader-circle"></i> Cargando…</div></div>
+        </section>
+      </div>
 
       <div class="dash-grid">
         ${panel('pStock', 'disc-3', 'Inventario de filamentos', '<a href="#/filamentos" class="dash-link">Gestionar <i data-lucide="arrow-right"></i></a>')}
@@ -261,10 +271,12 @@ export default {
     async function cargarTodo() {
       if (!supabaseConfigurado) {
         pintarStats(null, null, null);
-        const msg = vacioHTML('Supabase no está configurado. Seguí SUPABASE_SETUP.md.');
-        ['pActivo', 'pStock', 'pAlertas', 'pDist', 'pRecientes'].forEach((id) => pintar(body(id), msg));
+        const msg = vacioHTML('Supabase no está configurado.');
+        ['pActivo', 'pPuente', 'pStock', 'pAlertas', 'pDist', 'pRecientes'].forEach((id) => pintar(body(id), msg));
         return;
       }
+
+      cargarPuente();
 
       const [rp, rf, ri] = await Promise.allSettled([
         listarProductos(), listarFilamentos(), impresionesParaResumen(),
@@ -296,6 +308,19 @@ export default {
       pintar(body('pRecientes'), productos ? recientesHTML(productos) : errorHTML(rp.reason));
     }
 
+    async function cargarPuente() {
+      try {
+        const estado = await obtenerEstadoPuente();
+        if (!activo) return;
+        pintar(body('pPuente'), estadoPuenteHTML(estado));
+      } catch (err) {
+        if (!activo) return;
+        pintar(body('pPuente'), errorHTML(err));
+      }
+    }
+
+    const timerPuente = supabaseConfigurado ? setInterval(cargarPuente, 30_000) : null;
+
     container.addEventListener('click', (e) => {
       if (e.target.closest('[data-nuevo-filamento]')) {
         abrirFormFilamento(null, () => { if (activo) cargarTodo(); });
@@ -320,6 +345,9 @@ export default {
     pintarStats(null, null, null);
     cargarTodo();
 
-    return () => { activo = false; };
+    return () => {
+      activo = false;
+      clearInterval(timerPuente);
+    };
   },
 };

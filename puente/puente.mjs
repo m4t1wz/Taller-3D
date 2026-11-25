@@ -25,6 +25,7 @@ const SILENCIO_MAX_MS = 45 * 1000;        // sin mensajes de la impresora -> rec
 const RECONEXION_MIN_MS = 10 * 1000;
 const RECONEXION_MAX_MS = 2 * 60 * 1000;
 const LOG_MAX_BYTES = 1024 * 1024;
+const LATIDO_MS = 60 * 1000;              // "estoy vivo" a Supabase cada minuto
 
 const PEDIDO_HISTORIAL = JSON.stringify({
   method: 'get',
@@ -91,8 +92,11 @@ function log(...partes) {
 /* ---------- Estado ---------- */
 
 const enviados = new Set();  // ids del historial ya confirmados por Supabase (en esta sesión)
-let estadoImpresora = null;  // último "state" (1 = imprimiendo, 2 = terminada)
+let estadoImpresora = null;  // último "state" (1 = imprimiendo, 2 = terminada, 5 = pausa)
 let inicioActual = null;     // printStartTime de la impresión en curso (= id en el historial)
+let archivoActual = '';
+let progresoActual = null;
+let ultimoErrorLatido = '';
 let sincronizando = false;
 let ws = null;
 let ultimoMensaje = 0;
@@ -157,6 +161,48 @@ async function sincronizar(historial) {
   }
 }
 
+/* ---------- Latido (estado del puente en el Dashboard) ---------- */
+
+function estadoParaLatido() {
+  if (ws?.readyState !== WebSocket.OPEN) return 'sin_conexion';
+  if (estadoImpresora === 1) return 'imprimiendo';
+  if (estadoImpresora === 5) return 'pausada';
+  return 'libre';
+}
+
+async function latido() {
+  if (UNA_VEZ) return;
+  const estado = estadoParaLatido();
+  const enCurso = estado === 'imprimiendo' || estado === 'pausada';
+  try {
+    const res = await fetch(`${config.supabaseUrl}/rest/v1/rpc/puente_latido`, {
+      method: 'POST',
+      headers: { apikey: config.supabaseKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        p_token: config.token,
+        p_estado: estado,
+        p_archivo: enCurso ? archivoActual : null,
+        p_progreso: enCurso && Number.isFinite(progresoActual) ? Math.round(progresoActual) : null,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      const cuerpo = await res.json().catch(() => null);
+      throw new Error(`${res.status} ${cuerpo?.message ?? ''}`);
+    }
+    if (ultimoErrorLatido) {
+      log('Latido restablecido.');
+      ultimoErrorLatido = '';
+    }
+  } catch (err) {
+    // Loguear solo cuando cambia el error, para no llenar el log
+    if (err.message !== ultimoErrorLatido) {
+      log('ERROR en el latido:', err.message);
+      ultimoErrorLatido = err.message;
+    }
+  }
+}
+
 /* ---------- Impresora ---------- */
 
 function pedirHistorial() {
@@ -170,10 +216,18 @@ function procesar(data) {
   }
 
   if ('printStartTime' in data) inicioActual = data.printStartTime || null;
+  if ('printFileName' in data) archivoActual = String(data.printFileName ?? '');
+  if ('printProgress' in data) {
+    const anteriorPct = progresoActual;
+    progresoActual = Number(data.printProgress);
+    // Avisar al Dashboard cada 10 % de avance
+    if (Math.floor(progresoActual / 10) !== Math.floor((anteriorPct ?? -10) / 10)) latido();
+  }
 
   if ('state' in data) {
     const anterior = estadoImpresora;
     estadoImpresora = Number(data.state);
+    if (anterior !== estadoImpresora) latido();
 
     if (estadoImpresora === 1 && anterior !== 1) {
       log(`Imprimiendo: ${String(data.printFileName ?? '').split('/').pop() || '(archivo)'}`);
@@ -217,6 +271,7 @@ function conectar() {
       return;
     }
     log(`Desconectado. Reintento en ${Math.round(espera / 1000)} s.`);
+    latido(); // avisa "impresora sin conexión"
     setTimeout(conectar, espera);
     espera = Math.min(espera * 2, RECONEXION_MAX_MS);
   });
@@ -246,8 +301,10 @@ if (UNA_VEZ) {
     terminar(1);
   }, 30_000);
 } else {
-  // Revisión periódica + vigilancia de conexión colgada
+  // Revisión periódica + latido + vigilancia de conexión colgada
   setInterval(pedirHistorial, SYNC_PERIODICA_MS);
+  setInterval(latido, LATIDO_MS);
+  setTimeout(latido, 3000);
   setInterval(() => {
     if (ws?.readyState === WebSocket.OPEN && Date.now() - ultimoMensaje > SILENCIO_MAX_MS) {
       log('La impresora no responde, reconectando…');

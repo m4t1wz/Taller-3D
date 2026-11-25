@@ -36,6 +36,26 @@ export function formatPeso(gramos) {
   return n >= 1000 ? `${kgf.format(n / 1000)} kg` : formatGramos(n);
 }
 
+/** "MiniPickleBuddy.stl_PLA_7m54s.gcode" -> "MiniPickleBuddy" (saca extensión y sufijo de Creality Print). */
+export function nombrePieza(archivo) {
+  return String(archivo ?? '')
+    .replace(/^.*\//, '')
+    .replace(/\.gcode$/i, '')
+    .replace(/(\.stl)?_[A-Z]{2,5}_\d+h?\d*m?\d*s?$/i, '') || 'Sin nombre';
+}
+
+/** Diferencia en segundos -> "hace 3 min", "hace 2 h", "hace 4 días". */
+export function haceTiempo(segundos) {
+  const s = Math.max(0, Math.round(segundos));
+  if (s < 60) return 'hace un momento';
+  const m = Math.round(s / 60);
+  if (m < 60) return `hace ${m} min`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.round(h / 24);
+  return `hace ${d} ${d === 1 ? 'día' : 'días'}`;
+}
+
 /** ISO -> "22/11/2026" */
 export function formatFecha(iso) {
   const d = new Date(iso);

@@ -67,8 +67,41 @@
 .stat__label { font-weight: 700; color: var(--ink-700); font-size: 14px; }
 .stat__sub { font-size: 12.5px; color: var(--text-muted); }
 
+/* ---- Fila superior: filamento activo + estado del puente ---- */
+.dash-top {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-bottom: 22px;
+  align-items: start;
+}
+@media (max-width: 900px) { .dash-top { grid-template-columns: 1fr; } }
+
+/* ---- Estado del puente (punto de color + texto, nunca solo color) ---- */
+.puente { display: flex; align-items: flex-start; gap: 12px; }
+.puente__dot {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--ink-300);
+}
+.puente--on .puente__dot { background: var(--level-high); box-shadow: 0 0 0 4px var(--level-high-soft); animation: latido 2s ease-in-out infinite; }
+.puente--warn .puente__dot { background: var(--level-mid); box-shadow: 0 0 0 4px var(--level-mid-soft); }
+.puente--off .puente__dot { background: var(--ink-300); box-shadow: 0 0 0 4px var(--sky-50); }
+@keyframes latido { 50% { box-shadow: 0 0 0 7px var(--level-high-soft); } }
+
+.puente__info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.puente__info strong { font-size: 15.5px; }
+.puente__info span { font-size: 13.5px; color: var(--ink-700); }
+.puente__info code { font-size: 12.5px; background: var(--sky-50); padding: 1px 6px; border-radius: 6px; }
+.puente__bar { margin-top: 4px; }
+.puente__bar .fil-bar__fill { background: var(--primary); }
+.puente__foot { font-size: 12px !important; color: var(--text-muted) !important; }
+
 /* ---- Filamento activo ---- */
-.dash-activo { margin-bottom: 22px; }
+.dash-activo { margin-bottom: 0; }
 .dash-activo .card__head { margin-bottom: 12px; }
 .activo-row { display: flex; align-items: center; gap: 14px; }
 .activo-row .spool--sm { width: 40px; height: 40px; }

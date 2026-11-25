@@ -3,7 +3,7 @@ import { listarFilamentos } from '../services/filamentos.js';
 import { supabaseConfigurado } from '../services/supabase.js';
 import { abrirAsignarImpresion } from '../components/filamentoModals.js';
 import { toast } from '../components/toast.js';
-import { formatGramos } from '../utils/format.js';
+import { formatGramos, nombrePieza } from '../utils/format.js';
 import { escapeHTML } from '../utils/html.js';
 import { renderIcons } from '../utils/icons.js';
 import { colorSeguro } from '../utils/nivel.js';
@@ -28,10 +28,6 @@ const duracion = (s) => {
   const m = Math.round((s % 3600) / 60);
   return h ? `${h} h ${m} min` : `${m} min`;
 };
-
-/** Saca la extensión .gcode y el sufijo de Creality Print (_PLA_7m54s) para que se lea mejor. */
-const nombrePieza = (archivo) =>
-  (archivo ?? '').replace(/\.gcode$/i, '').replace(/(\.stl)?_[A-Z]{2,5}_\d+h?\d*m?\d*s?$/i, '') || 'Sin nombre';
 
 function filaHTML(imp) {
   const fil = imp.filamento;
